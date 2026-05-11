@@ -494,25 +494,29 @@ _HOVER_PANEL_JS = """
 """
 
 
-def save_figure(fig: go.Figure, path: str | Path) -> Path:
-    """Write a figure as a self-contained HTML.
-
-    For the topic landscape we wrap the figure with a sidebar info panel so
-    that hover details appear in a fixed location below the legend instead of
-    following the cursor. Detection is based on whether `customdata` is set
-    and `hoverinfo` is suppressed (our landscape convention).
-    """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    uses_sidebar = any(
+def _uses_sidebar(fig: go.Figure) -> bool:
+    """Whether the landscape sidebar (custom legend + info panel) should wrap
+    the figure. Detection is based on our landscape convention: traces have
+    `customdata` set and the in-plot tooltip is suppressed (`hoverinfo='none'`)."""
+    return any(
         getattr(tr, "hoverinfo", None) == "none" and getattr(tr, "customdata", None) is not None
         for tr in fig.data
     )
 
-    if not uses_sidebar:
-        fig.write_html(str(path), include_plotlyjs="cdn")
-        return path
+
+def landscape_html(fig: go.Figure) -> str:
+    """Build the self-contained landscape HTML document as a string.
+
+    Returns either the figure + sidebar wrapper (when the figure is a
+    landscape produced by :func:`landscape_figure`) or, as a fallback,
+    Plotly's own `fig.to_html(...)` full document.
+
+    The returned string is a complete `<!doctype html>...</html>` document
+    that can be saved to disk via :func:`save_figure` or embedded inline in
+    a notebook via :func:`show_landscape`.
+    """
+    if not _uses_sidebar(fig):
+        return fig.to_html(include_plotlyjs="cdn", full_html=True)
 
     # The info panel lives in a sibling flex column (outside the plot area),
     # so we don't need to reserve plot real estate for it. Just let the
@@ -530,7 +534,7 @@ def save_figure(fig: go.Figure, path: str | Path) -> Path:
         config={"responsive": True},
     )
 
-    html_doc = (
+    return (
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
         "<title>Topic landscape</title>"
         f"<style>{_INFO_PANEL_CSS}</style></head><body>"
@@ -546,8 +550,52 @@ def save_figure(fig: go.Figure, path: str | Path) -> Path:
         f"<script>{_HOVER_PANEL_JS}</script>"
         "</body></html>"
     )
-    path.write_text(html_doc, encoding="utf-8")
+
+
+def save_figure(fig: go.Figure, path: str | Path) -> Path:
+    """Write the landscape figure as a self-contained HTML file.
+
+    Thin wrapper around :func:`landscape_html` that just persists the
+    returned document to ``path``.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(landscape_html(fig), encoding="utf-8")
     return path
+
+
+def show_landscape(fig: go.Figure, height: int = 780):
+    """Display the landscape inline in a Jupyter / Colab notebook.
+
+    The full HTML document (Plotly chart + sidebar legend + info panel) is
+    embedded in an isolated ``<iframe srcdoc=...>``. This sidesteps two
+    common pitfalls:
+
+    * In Colab, relative ``<iframe src="...">`` paths cannot reach files on
+      disk (the cell output runs in a sandbox), so loading a saved
+      ``landscape.html`` shows a blank frame.
+    * ``IPython.display.HTML`` injected directly into the notebook would let
+      our sidebar CSS / JS leak into the host page.
+
+    Falls back to ``fig.show()`` if IPython is unavailable.
+    """
+    try:
+        from IPython.display import HTML, display
+    except ImportError:
+        fig.show()
+        return None
+
+    import html as _html
+    doc = landscape_html(fig)
+    encoded = _html.escape(doc, quote=True)
+    iframe = (
+        f'<iframe srcdoc="{encoded}" '
+        f'style="width:100%; height:{int(height)}px; border:1px solid #ddd; '
+        f'border-radius:6px;" '
+        f'sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"'
+        f'></iframe>'
+    )
+    return display(HTML(iframe))
 
 
 def _render_table(title: str, df: pd.DataFrame, columns: list[str]) -> str:
