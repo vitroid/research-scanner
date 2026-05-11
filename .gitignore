@@ -1,0 +1,42 @@
+# --- Python -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- Virtual environments / tooling caches ------------------------------
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# --- Generated data & reports (regeneratable from src/scripts) ----------
+data/
+outputs/
+
+# --- Notebook artifacts -------------------------------------------------
+.ipynb_checkpoints/
+# Scratch executed copy used by CI / smoke runs (notebooks/_executed.ipynb etc.)
+notebooks/_executed*.ipynb
+notebooks/*.executed.ipynb
+
+# --- Secrets ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- OS / editor --------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.cursor/
