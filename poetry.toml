@@ -1,0 +1,6 @@
+[virtualenvs]
+# このプロジェクトは Dropbox 同期フォルダ配下にあるため、
+# 仮想環境を in-project (.venv/) に作るとバイナリが Dropbox に同期されて壊れる。
+# 必ず Poetry のキャッシュ (~/Library/Caches/pypoetry/virtualenvs) 側に作成する。
+in-project = false
+create = true

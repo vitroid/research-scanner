@@ -1,0 +1,34 @@
+[project]
+name = "research-scanner"
+version = "0.1.0"
+description = "Semantic Scholar から特定分野の論文を取得し、BERTopic で abstract をトピッククラスタリングして孤立論文・トピック間ギャップを検出するパイプライン。"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+authors = [{ name = "research-scanner contributors" }]
+dependencies = [
+    "requests (>=2.31.0)",
+    "pandas (>=2.2.2)",
+    "pyarrow (>=14.0.0)",
+    "numpy (>=1.24.0)",
+    "scikit-learn (>=1.4.0)",
+    "sentence-transformers (>=3.0.0)",
+    "bertopic (>=0.16.4)",
+    "umap-learn (>=0.5.6)",
+    "hdbscan (>=0.8.39)",
+    "plotly (>=5.18.0)",
+    "tqdm (>=4.66.0)",
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.notebook]
+optional = true
+
+[tool.poetry.group.notebook.dependencies]
+jupyterlab = ">=4.0.0"
+ipykernel = ">=6.29.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

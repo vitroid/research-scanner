@@ -11,7 +11,42 @@ Semantic Scholar から特定分野の論文を取得し、BERTopic で abstract
 
 ## セットアップ
 
-Python 3.10+ 推奨。
+Python 3.10–3.13 を想定(`numba` / `hdbscan` の対応に合わせて `<3.14` 制約)。
+
+### Poetry を使う場合(推奨)
+
+```bash
+poetry install                       # 本体のみ
+poetry install --with notebook       # Jupyter も入れる
+poetry run python scripts/run_pipeline.py --help
+```
+
+Python が複数バージョン入っている環境では、対応バージョンを明示してから install:
+
+```bash
+poetry env use 3.13
+poetry install
+```
+
+**Dropbox 同期フォルダ向けの注意点**
+
+このリポジトリは Dropbox 配下に置かれている前提で次の設定をしている:
+
+- `poetry.lock` はコミットしない / Dropbox 同期もさせない(`.gitignore` 済み)。
+  複数マシン間で lock を共有すると、プラットフォーム差や同時編集で同期競合が起きるため。
+  各マシンで `poetry install` した時に都度 lock が再生成される。
+- 仮想環境はプロジェクト直下に作らず、Poetry のキャッシュ
+  (`~/Library/Caches/pypoetry/virtualenvs/...`) 側に置く。
+  `poetry.toml` で `virtualenvs.in-project = false` をピン留めしてあるので、
+  グローバルで `in-project = true` を設定している場合でもこのリポジトリだけは外に作られる。
+- もし Dropbox に `poetry.lock` が一度でも生成されてしまった場合は、
+  Dropbox 側の「同期しない」(ignore) 機能で除外しておくと無難:
+
+  ```bash
+  xattr -w com.dropbox.ignored 1 poetry.lock
+  ```
+
+### pip + venv を使う場合(Colab / 軽量環境向け)
 
 ```bash
 python -m venv .venv
@@ -19,8 +54,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Semantic Scholar API キー(任意・なくても動くがレート制限が緩くなる)
-を持っている場合:
+`requirements.txt` は Colab セットアップとの互換のため残してある。Poetry 側を更新した時は
+`poetry export -f requirements.txt --without-hashes -o requirements.txt` で同期する。
+
+### API キー
+
+Semantic Scholar API キー(任意・なくても動くがレート制限が緩くなる)を持っている場合:
 
 ```bash
 export SEMANTIC_SCHOLAR_API_KEY=...
@@ -31,11 +70,13 @@ export SEMANTIC_SCHOLAR_API_KEY=...
 `PLAN.md` の例(Bernal-Fowler ice rules)を 2010 年以降で最大 500 件:
 
 ```bash
-python scripts/run_pipeline.py \
+poetry run python scripts/run_pipeline.py \
   --query "Bernal-Fowler ice rules" \
   --year-from 2010 \
   --max-papers 500
 ```
+
+(venv 直接利用なら `poetry run` は不要)
 
 別分野に切り替えるときは `--query` と `--year-from` を変えるだけ。
 キャッシュを無視して再取得するときは `--refresh`。
@@ -72,7 +113,7 @@ outlier 率・トピック数・silhouette score を一覧できる。
 キャッシュ済み `data/papers.parquet` を再利用するので試行が速い。
 
 ```bash
-python scripts/tune.py --sweep 6 10 15 20 25 --methods leaf eom
+poetry run python scripts/tune.py --sweep 6 10 15 20 25 --methods leaf eom
 ```
 
 実測例 (`spin ice`, 527 件):
@@ -110,7 +151,7 @@ notebooks/
 isolation / visualize のセルに分割したもの。
 
 ```bash
-.venv/bin/python -m jupyter lab notebooks/research_scan.ipynb
+poetry run jupyter lab notebooks/research_scan.ipynb
 ```
 
 Google Colab で開くと、notebook 先頭の "Colab セットアップ" セルが GitHub からこのリポジトリを

@@ -19,6 +19,14 @@ env/
 htmlcov/
 .tox/
 
+# --- Poetry -------------------------------------------------------------
+# このプロジェクトは Dropbox 配下にあり、複数マシンで lock を共有すると
+# 同期競合 / プラットフォーム差異の問題が出るため lock はコミットしない。
+# 仮想環境も in-project (.venv/) ではなく Poetry のキャッシュ側に置く (poetry.toml 参照)。
+poetry.lock
+dist/
+.poetry-cache/
+
 # --- Generated data & reports (regeneratable from src/scripts) ----------
 data/
 outputs/
